@@ -57,8 +57,10 @@ def gps_distance(lat1, lon1, lat2, lon2):
 
 def safe_distance (portRelay, portMission):
 	'''assure that the UAV dont move into each other so close. Prevent clash'''
+	global VELOCITY
+	global SLEEPTIME
 	dist = gps_distance(Ports[portRelay].MAV.cs.lat,Ports[portRelay].MAV.cs.lng,Ports[portMission].MAV.cs.lat,Ports[portMission].MAV.cs.lng)
-	if (dist < (VELOCITY*sleepTime)):
+	if (dist < (VELOCITY*SLEEPTIME)):
 		Script.ChangeMode("Loiter")
 	return
 
