@@ -107,7 +107,7 @@ print 'Initialization Complete'
 while True:
 	if (Ports[relay].MAV.cs.mode == "Guided") :
 		setrelaytarget()
-		Script.Sleep(5000)
+		Script.Sleep(SLEEPTIME)
 		
 print 'Script Selesai'
 print 'wisnu emang ganteng'
