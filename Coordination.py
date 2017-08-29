@@ -1,10 +1,12 @@
-#Script untuk swarming relay (otomatis lho) pada APM:Copter
-#dibuat oleh wisnu, modif naufalinofh. July 2017
+#Script untuk coordination relay 
+#dibuat oleh wisnufireball@gmail.com, dimodif oleh fadel & hanif. id Line: wisnufireball, hanifmania, naufalinofh
 #kalau ada yang mau ditanya, kontak aja.
-
+#Koordinat pake titik
 #RUN SCRIPT SETELAH TERBANG
-### INISIALISASI ###
-print 'Mulai v0.1'
+
+### INITIALIZATION ###
+
+print 'Mulai v1.4'
 import sys
 import clr
 import time
@@ -16,28 +18,25 @@ from MissionPlanner.Utilities import Locationwp, StreamCombiner
 #clr.AddReference("MissionPlanner.Controls") # includes the Controls class
 #from MissionPlanner.Controls import ConnectionControl
 
+### VARIABLE & CONSTANTS DECLARATION ###
 
-"""
-def getPort(int):
-	for each var port :
-		if (int(Script.GetParam("SYSID_THISMAV"))== 1):
-			print "Mission MAV in port"+ Script.GetParam("SYSID_THISMAV")
-			return MAV.GetParam 
-"""
-global relay
-global mission
-global SLEEPTIME
 SLEEPTIME = 5
-global VELOCITY
-VELOCITY = 23	#for Locust 23, for quad 2
+VELOCITY_LOCUST = 23	
+VELOCITY_QUAD = 2
 
+SIG_LIMIT
 #Variable. as dummy
 #home = coordinate(someLat, someLon, someAlt)
-relay = 0 #port untuk uav relay
-mission = 1 # port untuk uav misi
+uavIDRel = 1 #port untuk uav relay
+uavIDMis = 0 # port untuk uav misi
+
+#comment one of these 2 lines below
+#VELOCITY = VELOCITY_LOCUST
+VELOCITY = VELOCITY_QUAD
+
+### FUNCTION & PROCEDURE DECLARATION ###
 
 
-#FUNCTION
 def gps_distance(lat1, lon1, lat2, lon2):
 	'''return distance between two points in meters, coordinates are in degrees
 	thanks to http://www.movable-type.co.uk/scripts/latlong.html'''
@@ -64,6 +63,10 @@ def safe_distance (portRelay, portMission):
 		Script.ChangeMode("Loiter")
 	return
 
+def safe_signalGCS(portRelay):
+	'''failsafe system in case the signal from relay UAV is bad enough'''	
+	global SIG_LIMIT
+	
 def get_homeMission():
 	''' get home position from home waypoint in mission UAV'''
 	home = Locationwp()  #get home coordinate 
@@ -72,21 +75,41 @@ def get_homeMission():
 	Locationwp.lng.SetValue(home,MAVLinkInterface.getHomePosition(Ports[mission]).lng)
 	Locationwp.alt.SetValue(home,MAVLinkInterface.getHomePosition(Ports[mission]).alt)
 	return home
+		
+def initialization():
+	'''Find and scan the sysid of the all port that connect to the mission planner.'''
+	global uavIDRel 	#Sysid for relay UAV
+	global uavIDMis		##Sysid for mission UAV
+	uavIDRel,uavIDMis = 0,0
+	if (Ports[0].MAV.sysid == 1):    # sysid Relay = 1 & sysid Mission = 2
+		uavIDRel = 0
+		uavIDMis = 1
+	else :
+		uavIDRel = 1
+		uavIDMis = 0
+		
+def setrelaytarget():
+	'''get the location of mission UAV & set new WP for the relay UAV'''
+	Locationwp.lat.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lat + home.lat )/2)
+	Locationwp.lng.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lng + home.lng )/2)
+	Locationwp.alt.SetValue(relay_target,8)		Ports[uavIDRel].setGuidedModeWP(relay_target)
+	print 'Relay Target Updated'
+	
+			
+### MAIN PROGRAM ###
 
-relay_target = Locationwp()	#objek wp, ya bayangkan aja variabel tipe wp
+relay_target = Locationwp()	# objek wp, ya bayangkan aja variabel tipe wp
 home = get_homeMission()		# panggil fungsi get_homeMission
-print 'Init Complete'
+print 'Initialization Started...'
+initialization()
+print 'Initialization Complete'
+
 while True:
-	#while (coordinationStart):
-		Locationwp.lat.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lat + home.lat )/2)
-		Locationwp.lng.SetValue(relay_target,(Ports[uavIDRel].MAV.cs.lng + home.lng )/2)
-		Locationwp.alt.SetValue(relay_target,home.alt/2)
-		Ports[uavIDRel].setGuidedModeWP(relay_target)
-		print 'Relay Target Updated'
-		Script.Sleep(sleepTime)
-
-
-
+	if (Ports[relay].MAV.cs.mode == "Guided") :
+		setrelaytarget()
+		Script.Sleep(5000)
+		
 print 'Script Selesai'
 print 'wisnu emang ganteng'
 print 'Fadel lebih ganteng'
+print 'Apalagi Hanif'
