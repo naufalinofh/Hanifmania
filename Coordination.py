@@ -24,9 +24,8 @@ SLEEPTIME = 5
 VELOCITY_LOCUST = 23	
 VELOCITY_QUAD = 2
 
-SIG_LIMIT
-#Variable. as dummy
-#home = coordinate(someLat, someLon, someAlt)
+SIG_LIMIT = 40 #percentage of limitation of signal quality from Mission UAV to GCS
+
 uavIDRel = 1 #port untuk uav relay
 uavIDMis = 0 # port untuk uav misi
 
@@ -66,16 +65,8 @@ def safe_distance (portRelay, portMission):
 def safe_signalGCS(portRelay):
 	'''failsafe system in case the signal from relay UAV is bad enough'''	
 	global SIG_LIMIT
-	
-def get_homeMission():
-	''' get home position from home waypoint in mission UAV'''
-	home = Locationwp()  #get home coordinate 
-	global mission	#global variable from mission ports
-	Locationwp.lat.SetValue(home,MAVLinkInterface.getHomePosition(Ports[mission]).lat)
-	Locationwp.lng.SetValue(home,MAVLinkInterface.getHomePosition(Ports[mission]).lng)
-	Locationwp.alt.SetValue(home,MAVLinkInterface.getHomePosition(Ports[mission]).alt)
-	return home
-		
+
+
 def initialization():
 	'''Find and scan the sysid of the all port that connect to the mission planner.'''
 	global uavIDRel 	#Sysid for relay UAV
@@ -88,11 +79,22 @@ def initialization():
 		uavIDRel = 1
 		uavIDMis = 0
 		
+def get_homeMission():
+	''' get home position from home waypoint in mission UAV'''
+	home = Locationwp()  #get home coordinate 
+	global uavIDMis	#global variable from mission ports
+	Locationwp.lat.SetValue(home,MAVLinkInterface.getHomePosition(Ports[uavIDMis]).lat)
+	Locationwp.lng.SetValue(home,MAVLinkInterface.getHomePosition(Ports[uavIDMis]).lng)
+	Locationwp.alt.SetValue(home,MAVLinkInterface.getHomePosition(Ports[uavIDMis]).alt)
+	return home
+		
 def setrelaytarget():
 	'''get the location of mission UAV & set new WP for the relay UAV'''
 	Locationwp.lat.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lat + home.lat )/2)
 	Locationwp.lng.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lng + home.lng )/2)
-	Locationwp.alt.SetValue(relay_target,8)		Ports[uavIDRel].setGuidedModeWP(relay_target)
+	relayAlt= Ports[uavIDMis].MAV.cs.alt
+	Locationwp.alt.SetValue(relay_target,relayAlt)		
+	Ports[uavIDRel].setGuidedModeWP(relay_target)
 	print 'Relay Target Updated'
 	
 			
