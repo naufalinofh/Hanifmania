@@ -10,6 +10,7 @@ print 'Mulai v1.4'
 import sys
 import clr
 import time
+import math
 clr.AddReference("MissionPlanner")
 import MissionPlanner
 from MissionPlanner import MAVLinkInterface
@@ -37,7 +38,7 @@ VELOCITY = VELOCITY_QUAD
 
 
 def gps_distance(lat1, lon1, lat2, lon2):
-	'''return distance between two points in meters, coordinates are in degrees
+	'''return distance between two points in meters, coordinates are in degrees using Haversine formula
 	thanks to http://www.movable-type.co.uk/scripts/latlong.html'''
 	radius_of_earth = 6378100.0
 
@@ -60,6 +61,7 @@ def safe_distance (portRelay, portMission):
 	dist = gps_distance(Ports[portRelay].MAV.cs.lat,Ports[portRelay].MAV.cs.lng,Ports[portMission].MAV.cs.lat,Ports[portMission].MAV.cs.lng)
 	if (dist < (VELOCITY*SLEEPTIME)):
 		Script.ChangeMode("Loiter")
+		Script.Sleep(SLEEPTIME/5)
 	return
 
 def safe_signalGCS(portRelay):
@@ -78,7 +80,7 @@ def initialization():
 	else :
 		uavIDRel = 1
 		uavIDMis = 0
-		
+
 def get_homeMission():
 	''' get home position from home waypoint in mission UAV'''
 	home = Locationwp()  #get home coordinate 
@@ -88,16 +90,34 @@ def get_homeMission():
 	Locationwp.alt.SetValue(home,MAVLinkInterface.getHomePosition(Ports[uavIDMis]).alt)
 	return home
 		
-def setrelaytarget():
+def setCoordinaterelay():
+	'''set new coordinate to relay based on mission UAV and home coordinate'''
+	global home
+	if UAV mission Connect:
+		bearing= getBearing(home.alt, home.lng, Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng)
+
+
+	else:
+
+
+
+def getBearing(p1,p2):
+	'''get degree of line/path relative to north line'''
+	'''thanks to http://www.igismap.com/formula-to-find-bearing-or-heading-angle-between-two-points-latitude-longitude/ '''
+	dlng = p2.lng-p1.lng
+	b = atan2((cos (p2.lat) * sin(dlng)), ( (cos(p1.lat)*sin(p2.lat)) - ( sin(p1.lat)*cos(p2.lat)*cos(dlng))) )
+	return b
+
+def setrelaytarget(relay_target,relayLat, relayLng, relayAlt):
 	'''get the location of mission UAV & set new WP for the relay UAV'''
-	Locationwp.lat.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lat + home.lat )/2)
-	Locationwp.lng.SetValue(relay_target,(Ports[uavIDMis].MAV.cs.lng + home.lng )/2)
+
+	Locationwp.lat.SetValue(relay_target,relayLat)
+	Locationwp.lng.SetValue(relay_target,relayLng)
 	relayAlt= Ports[uavIDMis].MAV.cs.alt
 	Locationwp.alt.SetValue(relay_target,relayAlt)		
 	Ports[uavIDRel].setGuidedModeWP(relay_target)
 	print 'Relay Target Updated'
 	
-			
 ### MAIN PROGRAM ###
 
 relay_target = Locationwp()	# objek wp, ya bayangkan aja variabel tipe wp
@@ -115,3 +135,5 @@ print 'Script Selesai'
 print 'wisnu emang ganteng'
 print 'Fadel lebih ganteng'
 print 'Apalagi Hanif'
+
+
