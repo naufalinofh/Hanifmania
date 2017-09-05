@@ -10,7 +10,7 @@ print 'Mulai v1.4'
 import sys
 import clr
 import time
-import math
+from math import cos, sin, atan2, radians, degrees, sqrt
 clr.AddReference("MissionPlanner")
 import MissionPlanner
 from MissionPlanner import MAVLinkInterface
@@ -34,23 +34,30 @@ uavIDMis = 0 # port untuk uav misi
 #VELOCITY = VELOCITY_LOCUST
 VELOCITY = VELOCITY_QUAD
 
+### Class Declaration ###
+class coordinate:
+	'point coordinate on earth'
+	def __init__(self, lat, lng, alt):
+		self.lat = lat
+		self.lng = lng
+		self.alt = alt
+
+
 ### FUNCTION & PROCEDURE DECLARATION ###
 
-
-def gps_distance(lat1, lon1, lat2, lon2):
+def gps_distance(p1, p2):
 	'''return distance between two points in meters, coordinates are in degrees using Haversine formula
 	thanks to http://www.movable-type.co.uk/scripts/latlong.html'''
 	radius_of_earth = 6378100.0
 
-	from math import radians, cos, sin, sqrt, atan2
-	lat1 = radians(lat1)
-	lat2 = radians(lat2)
-	lon1 = radians(lon1)
-	lon2 = radians(lon2)
+	lat1 = radians(p1.lat)
+	lat2 = radians(p2.lat)
+	lng1 = radians(p1.lng)
+	lng2 = radians(p2.lng)
 	dLat = lat2 - lat1
-	dLon = lon2 - lon1
+	dLng = lng2 - lng1
 
-	a = sin(0.5*dLat)**2 + sin(0.5*dLon)**2 * cos(lat1) * cos(lat2)
+	a = sin(0.5*dLat)**2 + sin(0.5*dLng)**2 * cos(lat1) * cos(lat2)
 	c = 2.0 * atan2(sqrt(a), sqrt(1.0-a))
 	return radius_of_earth * c
 
@@ -64,7 +71,7 @@ def safe_distance (portRelay, portMission):
 		Script.Sleep(SLEEPTIME/5)
 	return
 
-def safe_signalGCS(portRelay):
+def safe_signalGCS(portRelay): #EDIT
 	'''failsafe system in case the signal from relay UAV is bad enough'''	
 	global SIG_LIMIT
 
@@ -90,27 +97,40 @@ def get_homeMission():
 	Locationwp.alt.SetValue(home,MAVLinkInterface.getHomePosition(Ports[uavIDMis]).alt)
 	return home
 		
-def setCoordinaterelay():
-	'''set new coordinate to relay based on mission UAV and home coordinate'''
-	global home
-	if UAV mission Connect:
-		bearing= getBearing(home.alt, home.lng, Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng)
+def getBearing(p1, p2):
+	'''get degree of line/path relative to north line'''
+	'''thanks to http://www.igismap.com/formula-to-find-bearing-or-heading-angle-between-two-points-latitude-longitude/ '''
+	dlng = p2.lng-p1.lng
+	b = atan2((cos (radians(p2.lat)) * sin(radians(dlng))), ( (cos(radians(p1.lat))*sin(radians(p2.lat))) - ( sin(radians(p1.lat))*cos(radians(p2.lat))*cos(radians(dlng)) )) )
+	return b
 
+def setCoordinaterelay(originCoordinate, isBankCW):
+	'''set new coordinate to relay based on mission UAV and home coordinate, 
+	isBankCW is banking direction of UAV Mission. Value either CW or CCW'''
+	R = 6378100 #Radius of the Earth on meters
+	d = 40 #Distance in m
+	global home
+	
+	pHome = coordinate(home.lat, home.lng)
+	pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng)
+	if UAV mission Connect:
+		bearing = getBearing(pHome, pMis) #bearing of line between home to UAVMission
+		if(isBankCW):
+			bearing -= radians(90)
+		else:
+			bearing += radians(90)
+
+	lat2 = math.asin( math.sin(lat1)*math.cos(d/R) +
+	             math.cos(lat1)*math.sin(d/R)*math.cos(brng))
+
+	lon2 = lon1 + math.atan2(math.sin(brng)*math.sin(d/R)*math.cos(lat1),
+	                     math.cos(d/R)-math.sin(lat1)*math.sin(lat2))
 
 	else:
 
 
-
-def getBearing(p1,p2):
-	'''get degree of line/path relative to north line'''
-	'''thanks to http://www.igismap.com/formula-to-find-bearing-or-heading-angle-between-two-points-latitude-longitude/ '''
-	dlng = p2.lng-p1.lng
-	b = atan2((cos (p2.lat) * sin(dlng)), ( (cos(p1.lat)*sin(p2.lat)) - ( sin(p1.lat)*cos(p2.lat)*cos(dlng))) )
-	return b
-
 def setrelaytarget(relay_target,relayLat, relayLng, relayAlt):
 	'''get the location of mission UAV & set new WP for the relay UAV'''
-
 	Locationwp.lat.SetValue(relay_target,relayLat)
 	Locationwp.lng.SetValue(relay_target,relayLng)
 	relayAlt= Ports[uavIDMis].MAV.cs.alt
