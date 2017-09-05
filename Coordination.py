@@ -111,8 +111,9 @@ def setCoordinaterelay(originCoordinate, isBankCW):
 	d = 40 #Distance in m
 	global home
 	
-	pHome = coordinate(home.lat, home.lng)
-	pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng)
+	pHome = coordinate(home.lat, home.lng, 0)
+	pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng, Ports[uavIDMis].MAV.cs.alt)
+
 	if UAV mission Connect:
 		bearing = getBearing(pHome, pMis) #bearing of line between home to UAVMission
 		if(isBankCW):
@@ -120,21 +121,27 @@ def setCoordinaterelay(originCoordinate, isBankCW):
 		else:
 			bearing += radians(90)
 
-	lat2 = math.asin( math.sin(lat1)*math.cos(d/R) +
-	             math.cos(lat1)*math.sin(d/R)*math.cos(brng))
+		#create straight line from midpoint
+		latMid = 0.5 * (pHome.lat + pMis.lat)
+		lngMid = 0.5 * (pHome.lng + pMis.lng)
 
-	lon2 = lon1 + math.atan2(math.sin(brng)*math.sin(d/R)*math.cos(lat1),
-	                     math.cos(d/R)-math.sin(lat1)*math.sin(lat2))
+		lat = math.asin( math.sin(latMid)*math.cos(d/R) +
+	             math.cos(latMid)*math.sin(d/R)*math.cos(bearing))
+
+		lng = lngMid + math.atan2(math.sin(bearing)*math.sin(d/R)*math.cos(latMid), math.cos(d/R)-math.sin(latMid)*math.sin(lat))
+		alt = pMis.alt
+		relayCoordinate = coordinate (lat,lng, alt)
+
+		return relayCoordinate
 
 	else:
 
 
-def setrelaytarget(relay_target,relayLat, relayLng, relayAlt):
+def setrelaytarget(relay_target,relayCoordinate):
 	'''get the location of mission UAV & set new WP for the relay UAV'''
-	Locationwp.lat.SetValue(relay_target,relayLat)
-	Locationwp.lng.SetValue(relay_target,relayLng)
-	relayAlt= Ports[uavIDMis].MAV.cs.alt
-	Locationwp.alt.SetValue(relay_target,relayAlt)		
+	Locationwp.lat.SetValue(relay_target,relayCoordinate.lat)
+	Locationwp.lng.SetValue(relay_target,relayCoordinate.lng)
+	Locationwp.alt.SetValue(relay_target,relayCoordinate.alt)		
 	Ports[uavIDRel].setGuidedModeWP(relay_target)
 	print 'Relay Target Updated'
 	
