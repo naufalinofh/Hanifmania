@@ -112,9 +112,9 @@ def setCoordinaterelay(originCoordinate, isBankCW):
 	global home
 	
 	pHome = coordinate(home.lat, home.lng, 0)
-	pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng, Ports[uavIDMis].MAV.cs.alt)
 
 	if UAV mission Connect:
+		pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng, Ports[uavIDMis].MAV.cs.alt)
 		bearing = getBearing(pHome, pMis) #bearing of line between home to UAVMission
 		if(isBankCW):
 			bearing -= radians(90)
