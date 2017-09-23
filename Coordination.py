@@ -20,7 +20,6 @@ from MissionPlanner.Utilities import Locationwp, StreamCombiner
 #from MissionPlanner.Controls import ConnectionControl
 
 ### VARIABLE & CONSTANTS DECLARATION ###
-
 SLEEPTIME = 5
 VELOCITY_LOCUST = 23	
 VELOCITY_QUAD = 2
@@ -110,10 +109,11 @@ def setCoordinaterelay(originCoordinate, isBankCW):
 	R = 6378100 #Radius of the Earth on meters
 	d = 40 #Distance in m
 	global home
+	global uavIDMis
 	
 	pHome = coordinate(home.lat, home.lng, 0)
-
-	if UAV mission Connect:
+	UAVmissionConnect=True
+	if UAVmissionConnect:
 		pMis = coordinate (Ports[uavIDMis].MAV.cs.lat, Ports[uavIDMis].MAV.cs.lng, Ports[uavIDMis].MAV.cs.alt)
 		bearing = getBearing(pHome, pMis) #bearing of line between home to UAVMission
 		if(isBankCW):
@@ -133,8 +133,6 @@ def setCoordinaterelay(originCoordinate, isBankCW):
 		relayCoordinate = coordinate (lat,lng, alt)
 
 		return relayCoordinate
-
-	else:
 
 
 def setrelaytarget(relay_target,relayCoordinate):
@@ -162,5 +160,4 @@ print 'Script Selesai'
 print 'wisnu emang ganteng'
 print 'Fadel lebih ganteng'
 print 'Apalagi Hanif'
-
 
